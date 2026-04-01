@@ -28,7 +28,7 @@ npx skills add im-dongyoon/geo-kit --skill geo-kit
 
 ```
 /plugin marketplace add im-dongyoon/geo-kit
-/plugin install geo-kit@geo-kit
+/plugin install geo-kit@im-dongyoon-geo-kit
 ```
 
 ## 사용법
