@@ -1,0 +1,25 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "geo-kit",
+  "description": "Generative Engine Optimization (GEO) skill for AI coding assistants",
+  "owner": {
+    "name": "Dongyoon",
+    "email": "dongyoon.dev@gmail.com"
+  },
+  "plugins": [
+    {
+      "name": "geo-kit",
+      "source": "./",
+      "description": "GEO optimization — build AI-citable web pages and audit existing pages for AI search engines",
+      "version": "2.0.0",
+      "category": "productivity",
+      "keywords": ["geo", "seo", "ai-search", "schema-markup", "structured-data", "citability"],
+      "author": {
+        "name": "Dongyoon"
+      },
+      "homepage": "https://github.com/im-dongyoon/geo-kit",
+      "repository": "https://github.com/im-dongyoon/geo-kit",
+      "license": "MIT"
+    }
+  ]
+}
