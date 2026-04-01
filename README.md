@@ -28,7 +28,7 @@ Works with **15+ AI coding tools**: Claude Code, Cursor, Cline, GitHub Copilot, 
 
 ```
 /plugin marketplace add im-dongyoon/geo-kit
-/plugin install geo-kit@im-dongyoon-geo-kit
+/plugin install geo-kit@geo-kit
 ```
 
 ## Usage
