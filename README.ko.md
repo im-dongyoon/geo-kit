@@ -27,8 +27,8 @@ npx skills add im-dongyoon/geo-kit --skill geo-kit
 ### 방법 2: Claude Code 플러그인 마켓플레이스
 
 ```
-/plugin marketplace add im-dongyoon/geo-kit
-/plugin install geo-kit@geo-kit
+/plugin marketplace add https://github.com/im-dongyoon/geo-kit
+/plugin install geo-kit
 ```
 
 ## 사용법
