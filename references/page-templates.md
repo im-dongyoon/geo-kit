@@ -6,7 +6,11 @@
 3. [Landing Pages](#3-landing-pages)
 4. [FAQ Pages](#4-faq-pages)
 5. [Pillar / Category Hub Pages](#5-pillar--category-hub-pages)
-6. [Before/After Refactoring Examples](#6-beforeafter-refactoring-examples)
+6. [Standing — Product/Service Introduction Page](#6-standing--productservice-introduction-page)
+7. [Standing — Pricing Page](#7-standing--pricing-page)
+8. [Standing — About/Team Page](#8-standing--aboutteam-page)
+9. [Logic — Dynamic/Data-Driven Page](#9-logic--dynamicdata-driven-page)
+10. [Before/After Refactoring Examples](#10-beforeafter-refactoring-examples)
 
 ---
 
@@ -227,7 +231,177 @@ Per Writesonic research, category hubs maintain stable citation rates across ind
 
 ---
 
-## 6. Before/After Refactoring Examples
+## 6. Standing — Product/Service Introduction Page
+
+Unlike Evergreen pages (section 1) which focus on citation, Standing product pages focus on **AI recommendation**. The goal is for AI to recommend this product when users ask "What tool should I use for X?"
+
+### Structure Template
+
+```
+[H1] [Product/Service Name] — [Category Definition for Target Audience]
+
+[Hero Section]
+→ First 40 words: Define WHAT this is and WHO it's for (entity definition, not hook)
+→ 1-2 key metrics ("Used by 10,000+ companies", "4.8/5 rating")
+
+[H2] What is [Product/Service Name]?
+→ 2-3 sentence definition (independently citable by AI)
+→ Category placement ("a [category] platform for [audience]")
+
+[H2] [Product/Service Name] vs Alternatives
+→ Comparison table with specific features, pricing, and differentiators
+→ Honest positioning (AI values balanced comparisons over marketing claims)
+
+[H2] Key Features
+→ Each feature as H3 with specific outcome numbers
+→ Focus on "what does this do for the user" not "what is this"
+
+[H2] Pricing
+→ Real numbers required (AI skips "contact us" pages)
+→ Feature comparison per plan
+→ Annual vs monthly pricing
+
+[H2] Customer Results
+→ Named customers with specific, quantified outcomes
+→ "Company X achieved Y% improvement in Z months"
+
+[H2] FAQ — Common Questions About [Product/Service Name]
+→ 5-10 purchase-decision questions
+→ Questions AI users would ask: "Is [Product] worth it?", "What's the best plan for small teams?"
+
+[Schema Markup: Service or Product (see schema-markup.md for selection criteria), Organization, FAQPage, AggregateRating]
+```
+
+### Checklist
+
+- [ ] First 40 words define the product/service (not a marketing hook)
+- [ ] At least 1 comparison table vs alternatives
+- [ ] Pricing with real numbers visible
+- [ ] Customer results with specific metrics
+- [ ] Service or Product schema (not Article)
+- [ ] Brand name explicit throughout (no pronouns)
+- [ ] FAQ covers purchase-decision questions
+
+---
+
+## 7. Standing — Pricing Page
+
+Pricing pages are now directly read by AI (GPT-5.4 reads pricing pages for comparisons). This is a high-value Standing page.
+
+### Structure Template
+
+```
+[H1] [Product/Service Name] Pricing — Plans for [Target Audience]
+
+[Pricing Table]
+→ All plans with names, prices, and key features
+→ Annual vs monthly pricing shown
+→ Most popular plan highlighted
+
+[H2] What's Included in Each Plan?
+→ Feature comparison table (columns = plans, rows = features)
+→ Checkmarks for included features, specific limits for variable features
+
+[H2] [Product/Service Name] Pricing vs [Competitor] Pricing
+→ Direct price comparison table
+→ Value comparison (price per user, per feature, etc.)
+
+[H2] FAQ — Pricing Questions
+→ "Is there a free trial?"
+→ "Can I change plans?"
+→ "What payment methods are accepted?"
+→ "Is there a discount for annual billing?"
+
+[Schema Markup: Product/Service with AggregateOffer (lowPrice, highPrice, priceCurrency), Organization, FAQPage]
+```
+
+### Checklist
+
+- [ ] All plan names and prices visible (no "contact us" as the only option)
+- [ ] Feature comparison table with plan columns
+- [ ] Annual/monthly pricing both shown
+- [ ] Competitor price comparison present
+- [ ] AggregateOffer schema with real price range
+
+---
+
+## 8. Standing — About/Team Page
+
+Company entity pages strengthen the Organization knowledge graph node. AI uses this to verify brand identity and E-E-A-T.
+
+### Structure Template
+
+```
+[H1] About [Company Name] — [Brief Mission/Industry]
+
+[H2] What is [Company Name]?
+→ Company definition (independently citable)
+→ Founded year, headquarters, team size
+→ Core mission/value proposition
+
+[H2] Our Team / Leadership
+→ Key team members with name, title, credentials
+→ External profile links (LinkedIn, GitHub, personal sites)
+
+[H2] Company History / Milestones
+→ Key milestones with dates and specific numbers
+→ "Founded in 2020, reached 10,000 customers by 2024"
+
+[H2] FAQ — About [Company Name]
+→ "Where is [Company] headquartered?"
+→ "How many employees does [Company] have?"
+→ "Who founded [Company]?"
+
+[Schema Markup: Organization (comprehensive — founders, employees, awards), Person (for team members), FAQPage]
+```
+
+### Checklist
+
+- [ ] Company definition in first 2 sentences
+- [ ] Key team members with credentials and external links
+- [ ] Specific numbers (founding year, team size, customer count)
+- [ ] Organization schema with comprehensive fields
+- [ ] Person schema for listed team members
+
+---
+
+## 9. Logic — Dynamic/Data-Driven Page
+
+For pages where GEO focus is **crawlability**, not citation. The goal is ensuring AI can access the content at all.
+
+### Structure Template
+
+```
+[Server-Rendered Content]
+→ All GEO-critical content in initial HTML response
+→ Data fetched server-side (not useEffect/client-only)
+→ Clean URL with semantic slug (not UUID)
+
+[H1] [Page Topic] — [Context]
+
+[Main Content]
+→ Content visible without JavaScript interaction
+→ No modals, tabs, or accordions hiding key information
+→ Structured data matching the visible content
+
+[H2] FAQ (if applicable)
+
+[Schema Markup: Appropriate type based on content, BreadcrumbList]
+```
+
+### Checklist
+
+- [ ] Initial HTML contains all visible content (verify with `curl`)
+- [ ] No loading.tsx/Suspense hiding primary content
+- [ ] Clean URL with semantic slug
+- [ ] Dynamic data fetched server-side
+- [ ] No content hidden behind interactive components
+- [ ] Proper schema type matching content
+- [ ] noindex NOT applied (unless intentionally private)
+
+---
+
+## 10. Before/After Refactoring Examples
 
 ### Example 1: Evergreen Page Opening
 

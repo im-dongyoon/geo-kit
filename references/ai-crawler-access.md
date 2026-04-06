@@ -119,3 +119,114 @@ Verify which AI bots actually visit your site. Use commands like:
 grep -Ei "gptbot|claudebot|perplexitybot|oai-searchbot" access.log
 ```
 to check crawl activity and prioritize optimization for bots that actually visit.
+
+---
+
+## Framework Static Asset Blocking
+
+AI crawlers waste budget crawling CSS, JS, and image files. Block framework-specific static asset paths in robots.txt.
+
+Add these lines to the default `User-agent: *` section of robots.txt:
+
+```
+# Framework static assets — save crawl budget
+# Next.js
+Disallow: /_next/static/
+Disallow: /_next/image/
+
+# Nuxt
+Disallow: /_nuxt/
+
+# Astro  
+Disallow: /_astro/
+
+# General
+Disallow: /static/chunks/
+Disallow: /assets/
+```
+
+**Note:** Only block paths that serve compiled assets (CSS/JS bundles), not paths that serve content. Check your framework's build output to confirm paths.
+
+---
+
+## llms.txt — AI-Specific Site Description
+
+`llms.txt` is an emerging convention (proposed by llmstxt.org) for providing AI systems a concise, machine-readable summary of your site. While not universally adopted yet, early support from Anthropic (Claude) and others makes it worth implementing.
+
+### Format
+
+Place at site root: `https://example.com/llms.txt`
+
+```
+# [Site Name]
+
+> [One-line description of the site]
+
+## About
+[2-3 sentences describing what the site/company does, who it serves, key offerings]
+
+## Key Pages
+- [Page Title](https://example.com/page): [Brief description]
+- [Page Title](https://example.com/page): [Brief description]
+
+## Contact
+- Website: https://example.com
+- Email: contact@example.com
+```
+
+### Optional: llms-full.txt
+
+For comprehensive AI context, provide `llms-full.txt` with more detailed information:
+- Full product/service descriptions
+- Pricing details
+- Technical specifications
+- FAQ content
+
+### Implementation
+
+1. Create `llms.txt` at the site root (static file or generated route)
+2. Optionally create `llms-full.txt` for comprehensive detail
+3. Reference in `<head>`:
+   ```html
+   <link rel="llms" href="/llms.txt" />
+   ```
+4. Keep content current — update when major site changes occur
+
+---
+
+## noindex Strategy
+
+Not every page should be visible to AI. Proper noindex management prevents crawl budget waste and keeps AI focused on valuable content.
+
+### Pages That Should Have noindex
+
+| Category | Examples | Why |
+|----------|----------|-----|
+| Authentication | /login, /signup, /reset-password | No GEO value, private flow |
+| Dashboard/App | /dashboard/*, /settings/* | User-specific, behind auth |
+| Admin | /admin/* | Internal only |
+| Checkout/Order | /checkout, /order/*, /cart | Transactional, no citation value |
+| Legal boilerplate | /terms, /privacy (unless SEO-targeted) | Low citation value |
+| Utility | /404, /500, /maintenance | Error pages |
+| API routes | /api/* (already in default robots.txt) | Data endpoints |
+
+### Pages That Should NOT Have noindex
+
+| Category | Examples | Why |
+|----------|----------|-----|
+| Product/Service | /product/*, /pricing, /features | Core GEO targets |
+| Content | /blog/*, /guides/*, /docs/* | Citation targets |
+| Company | /about, /team, /careers | Entity signals |
+| Landing pages | /, /solutions/* | Recommendation targets |
+
+### Implementation Pattern
+
+For Next.js App Router:
+```typescript
+// app/(private)/layout.tsx — covers all private routes
+export const metadata = {
+  robots: { index: false, follow: false },
+};
+```
+
+For other frameworks, apply noindex via meta tags or response headers for private route groups.

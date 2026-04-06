@@ -1,7 +1,7 @@
 {
   "name": "geo-kit",
-  "version": "2.0.0",
-  "description": "Generative Engine Optimization (GEO) for AI coding assistants",
+  "version": "3.0.0",
+  "description": "Purpose-aware Generative Engine Optimization (GEO) for AI coding assistants",
   "author": {
     "name": "Dongyoon"
   },

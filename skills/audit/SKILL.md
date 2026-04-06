@@ -1,10 +1,11 @@
 ---
-name: audit
+name: geo-kit:audit
 description: >
   Audit web pages for GEO (Generative Engine Optimization) readiness.
-  Scans structured data, semantic HTML, meta tags, AI crawler access,
-  and content citability. Produces a scored report (100-point scale)
-  with a 31-point checklist and prioritized action items.
+  Detects page purpose (Content/Standing/Logic), then applies purpose-specific
+  scoring criteria. Scans structured data, semantic HTML, meta tags, AI crawler
+  access, content citability, and anti-patterns. Produces a scored report
+  (100-point scale) with a purpose-aware checklist and prioritized action items.
   Use this skill when users want to check, audit, evaluate, review, or
   score their pages for AI search visibility — even if they say "SEO audit"
   or just "check my site". Also activate when users ask why their content
@@ -27,6 +28,8 @@ allowed-tools:
 
 Scan a codebase and produce a **GEO Audit Report** scored out of 100, identifying exactly what to fix for AI search visibility.
 
+The audit applies **purpose-specific criteria** — a blog post, a pricing page, and an API route each have different GEO ceilings and are scored differently.
+
 ## Scope Detection
 
 | Invocation | Scope |
@@ -39,121 +42,198 @@ Scan a codebase and produce a **GEO Audit Report** scored out of 100, identifyin
 
 ## Audit Workflow
 
-### Step 1: Scan Structured Data
+### Step -1: GEO Spec Check
 
-Search for existing JSON-LD, microdata, or RDFa across all pages in scope.
+Check if a `geo-spec/` directory exists at the project root.
 
-**Check for:**
-- Tier 1 schemas present (Organization, BreadcrumbList) — required on every page
-- Tier 2 schemas by page type (FAQPage, Article, Product, HowTo, Service)
-- Tier 3 enhancement schemas (Person, AggregateRating, Speakable, VideoObject)
-- JSON-LD format used (not microdata or RDFa — those cause parsing issues)
-- Required fields populated (no empty or placeholder values)
-- Content-schema consistency (schema data matches visible page content)
+**If exists:** Load the spec modules (identity, page-map, schema-defaults, etc.) for use in subsequent steps. The Page Map enables instant purpose detection in Step 0.
 
-**Scoring (15 points):**
-- Tier 1 present on all pages: 8 pts
-- Tier 2 appropriate to page types: 5 pts
-- Tier 3 enhancements: 2 pts
+**If missing:** Inform the user:
+```
+이 프로젝트에 GEO Spec이 없습니다.
+`/geo-kit:spec create`로 프로젝트 GEO 설정을 생성하면
+브랜드명, 페이지 용도, 스키마 기본값 등을 자동으로 참조할 수 있습니다.
 
-### Step 2: Check Heading Hierarchy & Semantic HTML
+스펙 없이 audit을 진행할까요?
+```
 
-Verify semantic structure that AI uses for content extraction.
+If proceeding without spec, continue to Step 0 with heuristic detection only.
 
-**Check for:**
-- Single H1 per page containing the core search query
-- Logical heading hierarchy (H1 -> H2 -> H3, no skipped levels)
-- H2s in question form matching user prompts (not vague labels)
-- Semantic landmarks (header, main, nav, footer, article, section)
-- ARIA labels where appropriate
+---
 
-**Scoring (15 points):**
-- Correct H1 with target query: 5 pts
-- Logical heading hierarchy: 4 pts
-- Question-based H2s: 4 pts
-- Semantic landmarks: 2 pts
+### Step 0: Page Purpose Detection
 
-### Step 3: Evaluate Content Citability
+Determine each page's purpose before scoring. For detailed detection signals, read `../../references/page-purpose-detection.md`.
 
-This is the most impactful area — whether AI can actually extract and cite the content.
+**Three purpose types:**
 
-**Check for:**
-- Clean opening answer in first 40-60 words (direct answer, not hooks or fluff)
-- First 200 words function as standalone citation
-- TL;DR / Key Takeaways above the fold
-- Atomic fact structure (each section answers one question)
-- Fact density (specific numbers every 150-200 words)
-- Entity clarity (brand name explicit, no pronoun substitution)
-- At least 1 comparison table or framework
-- Author byline with credentials and external profile links
+| Purpose | Goal | What AI Does |
+|---------|------|-------------|
+| **Content** | Citation | AI quotes this page as a source |
+| **Standing** | Recommendation | AI recommends this product/service |
+| **Logic** | Crawlability | AI can access and read the data |
 
-**Scoring (20 points):**
-- Clean opening answer: 5 pts
-- Standalone first 200 words: 3 pts
-- Atomic fact structure: 3 pts
-- Fact density: 3 pts
-- Entity clarity: 2 pts
-- Comparison content: 2 pts
-- Author byline with E-E-A-T signals: 2 pts
+**Detection flow:**
 
-### Step 4: Evaluate Meta Tags & OpenGraph
+1. **GEO Spec Page Map** — if the spec exists and has a matching path, use it directly (highest confidence)
+2. **File path patterns** — `/blog/` → Content, `/pricing/` → Standing, `/api/` → Logic
+3. **Code patterns** — author fields → Content, pricing components → Standing, SSR handlers → Logic
+4. **Existing schema** — Article → Content, Product → Standing, none → Logic
 
-**Check for:**
-- Title tag (50-60 chars, contains target query)
-- Meta description (150-160 chars, compelling summary)
-- OpenGraph tags (og:title, og:description, og:image, og:type)
-- Published date and last modified date displayed
-- Canonical URL
+**Present assessment to user:**
 
-**Scoring (10 points):**
-- Title tag optimized: 3 pts
-- Meta description present: 2 pts
-- OpenGraph complete: 3 pts
-- Date signals present: 2 pts
+For single files:
+```
+이 페이지는 [상설페이지 — 제품 소개]로 보입니다.
 
-### Step 5: Verify AI Crawler Access
+근거:
+- 파일 경로: /pricing/ 디렉토리
+- 코드 패턴: PricingTable 컴포넌트, 가격 데이터 배열
+- 스키마: Product 스키마 존재
 
-**Check for:**
-- robots.txt exists and is accessible
-- AI search bots allowed: OAI-SearchBot, ChatGPT-User, Claude-SearchBot, Claude-User, PerplexityBot
-- Training bots blocked: GPTBot, ClaudeBot, Google-Extended
-- sitemap.xml exists and includes important pages
-- No Cloudflare "Block AI bots" blanket blocking (if detectable)
+맞나요? (Content / Standing / Logic 중 다른 유형이면 알려주세요)
+```
 
-For the full recommended robots.txt configuration, read `../../references/ai-crawler-access.md`.
+For multi-file audits:
+```
+총 12개 페이지 분석:
+- Content: 7개 (/blog/*, /guides/*)
+- Standing: 4개 (/pricing, /about, /product, /features)
+- Logic: 1개 (/api/*)
 
-**Scoring (15 points):**
-- robots.txt properly configured: 8 pts
-- AI search bots explicitly allowed: 4 pts
-- sitemap.xml present and current: 3 pts
+확인해주세요. 변경이 필요한 페이지가 있으면 알려주세요.
+```
 
-### Step 6: Check Content Structure & Formatting
+After confirmation, if `geo-spec/page-map.md` exists, offer to update it with any new mappings.
 
-**Check for:**
-- Paragraphs kept to 2-4 sentences
-- Consistent terminology (same concept = same word)
-- Comparison information in table format
-- Key terms have explicit definitions
-- Pricing shows real numbers (not "contact us")
+---
 
-**Scoring (15 points):**
-- Paragraph length: 3 pts
-- Terminology consistency: 3 pts
-- Comparison tables: 3 pts
-- Explicit definitions: 3 pts
-- Real pricing data: 3 pts
+### Steps 1–7: Purpose-Aware Scoring
 
-### Step 7: Check Freshness Signals
+Score each page out of 100, using **different areas and weights per purpose type**.
 
-**Check for:**
-- Published date displayed
-- Last modified / "Last Updated" date displayed
-- Content appears current (no stale data or outdated references)
+#### Scoring by Purpose
 
-**Scoring (10 points):**
-- Published date: 3 pts
-- Last modified date: 4 pts
-- Content freshness: 3 pts
+**Content pages** — optimized for AI citation:
+
+| Area | Score | Focus |
+|------|-------|-------|
+| Structured Data | /15 | Tier 1/2/3 schema coverage |
+| Semantic HTML | /15 | H1, hierarchy, question-based H2s, landmarks |
+| Content Citability | /20 | Opening answer, standalone 200 words, atomic facts, fact density, author |
+| Meta & OpenGraph | /10 | Title, description, OG tags, dates |
+| AI Crawler Access | /15 | robots.txt, AI bots, sitemap |
+| Content Structure | /15 | Paragraph length, terminology, tables, definitions, pricing |
+| Freshness Signals | /10 | Published date, last modified, currency |
+| **Total** | **/100** | |
+
+**Standing pages** — optimized for AI recommendation:
+
+| Area | Score | Focus |
+|------|-------|-------|
+| Structured Data | /15 | Product/Service schema, Organization, @graph |
+| Semantic HTML | /10 | H1, hierarchy, landmarks |
+| Entity & Recommendation | /20 | Brand clarity, pricing visibility, comparison tables, competitive positioning, CTA transparency |
+| Meta & OpenGraph | /10 | Title, description, OG tags |
+| AI Crawler Access | /15 | robots.txt, AI bots, sitemap |
+| Content Structure | /15 | Paragraph length, terminology, tables, definitions, pricing |
+| Content Citability | /10 | Opening definition, standalone excerpt |
+| Freshness Signals | /5 | Last modified date |
+| **Total** | **/100** | |
+
+**Logic pages** — optimized for AI crawlability:
+
+| Area | Score | Focus |
+|------|-------|-------|
+| Crawlability & Rendering | /40 | SSR complete HTML, no Suspense blocking, pre-rendered routes, clean URLs, static asset blocking |
+| AI Crawler Access | /30 | robots.txt, AI bots, sitemap, noindex strategy |
+| Structured Data | /10 | Appropriate schema, @graph |
+| Semantic HTML | /5 | Basic structure |
+| Meta & OpenGraph | /5 | Basic meta tags |
+| Content Structure | /10 | Content not hidden in modals, data accessible |
+| **Total** | **/100** | |
+
+#### Scoring Detail per Area
+
+**Structured Data (Content: 15, Standing: 15, Logic: 10)**
+- Tier 1 present on all pages (Organization, BreadcrumbList): 8 pts (Content/Standing) / 5 pts (Logic)
+- Tier 2 appropriate to page type: 5 pts (Content/Standing) / 3 pts (Logic)
+- Tier 3 enhancements: 2 pts (all)
+
+**Semantic HTML (Content: 15, Standing: 10, Logic: 5)**
+- Correct H1 with target query: 5 pts (Content) / 4 pts (Standing) / 2 pts (Logic)
+- Logical heading hierarchy: 4 pts (Content) / 3 pts (Standing) / 1 pt (Logic)
+- Question-based H2s: 4 pts (Content only)
+- Semantic landmarks + ARIA: 1 pt (all)
+- Language declaration: 1 pt (all)
+
+**Content Citability (Content: 20, Standing: 10, Logic: 0)**
+- Clean opening answer: 5 pts (Content) / 3 pts (Standing)
+- Standalone first 200 words: 3 pts (Content) / 2 pts (Standing)
+- Atomic fact structure: 3 pts (Content) / 0 (Standing)
+- Fact density: 3 pts (Content) / 0 (Standing)
+- Entity clarity: 2 pts (Content) / 3 pts (Standing)
+- Comparison content: 2 pts (Content) / 2 pts (Standing)
+- Author byline with E-E-A-T: 2 pts (Content only)
+
+**Entity & Recommendation (Standing only: 20)**
+- Brand name explicit, no pronouns: 4 pts
+- Pricing with real numbers visible: 5 pts
+- Comparison table vs alternatives: 4 pts
+- Customer results with specific metrics: 3 pts
+- CTA does not hide content: 4 pts
+
+**Crawlability & Rendering (Logic only: 40)**
+- SSR/SSG producing complete HTML: 15 pts
+- No Suspense/loading states hiding content: 8 pts
+- Dynamic routes pre-rendered or crawlable: 7 pts
+- Static assets blocked in robots.txt: 5 pts
+- Clean URL structure (slugs, not UUIDs): 5 pts
+
+**Meta & OpenGraph (Content: 10, Standing: 10, Logic: 5)**
+- Title tag optimized: 3 pts (Content/Standing) / 2 pts (Logic)
+- Meta description: 2 pts (all)
+- OpenGraph complete: 2 pts (Content/Standing) / 0 (Logic)
+- Date signals: 2 pts (Content/Standing) / 0 (Logic)
+- Viewport meta tag: 1 pt (all)
+
+**AI Crawler Access (Content: 15, Standing: 15, Logic: 30)**
+- robots.txt properly configured: 8 pts (Content/Standing) / 15 pts (Logic)
+- AI search bots explicitly allowed: 4 pts (Content/Standing) / 8 pts (Logic)
+- sitemap.xml present and current: 3 pts (Content/Standing) / 4 pts (Logic)
+- noindex strategy correct: 0 (Content/Standing) / 3 pts (Logic)
+
+**Content Structure (Content: 15, Standing: 15, Logic: 10)**
+- Paragraph length (2-4 sentences): 3 pts (all)
+- Terminology consistency: 3 pts (Content/Standing) / 2 pts (Logic)
+- Comparison tables: 3 pts (Content/Standing) / 0 (Logic)
+- Explicit definitions: 3 pts (Content/Standing) / 2 pts (Logic)
+- Real pricing data: 3 pts (Content/Standing) / 0 (Logic)
+- Content not hidden in modals: 0 (Content/Standing) / 6 pts (Logic)
+
+**Freshness Signals (Content: 10, Standing: 5, Logic: 0)**
+- Published date: 3 pts (Content) / 0 (Standing)
+- Last modified date: 4 pts (Content) / 3 pts (Standing)
+- Content freshness: 3 pts (Content) / 2 pts (Standing)
+
+---
+
+### Step 8: Anti-Pattern Scan
+
+After scoring, scan for anti-patterns defined in `../../references/anti-patterns.md`.
+
+For each detected anti-pattern, record:
+- **ID** (e.g., AP-C01)
+- **Severity** (Critical / Warning / Info)
+- **Description** (what was found)
+- **Location** (file:line)
+- **Fix Type** (Auto-fixable / Guided / Manual)
+
+Anti-patterns are reported separately from the score — they indicate structural issues that may not be captured by the point-based scoring alone.
+
+For fix guidance, reference `../../references/fix-recipes.md`.
+
+For framework-specific issues, reference `../../references/framework-pitfalls.md`.
 
 ---
 
@@ -167,6 +247,7 @@ Produce the report in this exact structure:
 **Scope:** [Full project / Single file / Directory]
 **Pages scanned:** [N]
 **Date:** [YYYY-MM-DD]
+**Page Purpose:** [Content — 블로그 / Standing — 제품 소개 / Logic — SSR 라우트]
 
 ### Overall Score: [X/100]
 
@@ -174,28 +255,36 @@ Produce the report in this exact structure:
 
 | Area | Status | Score |
 |------|--------|-------|
-| Structured Data | [pass/warn/fail] | X/15 |
-| Semantic HTML | [pass/warn/fail] | X/15 |
-| Content Citability | [pass/warn/fail] | X/20 |
-| Meta & OpenGraph | [pass/warn/fail] | X/10 |
-| AI Crawler Access | [pass/warn/fail] | X/15 |
-| Content Structure | [pass/warn/fail] | X/15 |
-| Freshness Signals | [pass/warn/fail] | X/10 |
+| [Purpose-specific areas] | [pass/warn/fail] | X/[max] |
+| ... | ... | ... |
+
+### Anti-Patterns Detected
+
+| ID | Severity | Pattern | Location | Fix Type |
+|----|----------|---------|----------|----------|
+| AP-C01 | 🔴 Critical | Content hidden in modal | pricing.tsx:45 | Guided |
+| AP-W02 | 🟡 Warning | Duplicate H1 | about.tsx:12,18 | Auto-fixable |
+| ... | ... | ... | ... | ... |
+
+(If no anti-patterns: "No anti-patterns detected.")
 
 ### Findings
 
 [Per-area detailed findings. For each area, list what was found,
 what's missing, and specific file:line references.]
 
-### 31-Point Citation Readiness Checklist
+### Citation Readiness Checklist
 
-[Run per-page checklist. Mark each item pass/fail with evidence.]
+[Run purpose-specific checklist from ../../references/citation-checklist.md.
+Apply Universal (12 items) + Purpose-specific items.
+Mark each item pass/fail with evidence.]
 
 ### Priority Actions
 
-1. [Highest impact action — what to fix first and why]
-2. [Second highest impact]
-3. [Third...]
+1. [Critical anti-pattern → fix first, reference fix-recipes.md]
+2. [Highest impact scoring improvement]
+3. [Next highest impact]
+...
 ```
 
 **Status thresholds:**
@@ -205,77 +294,66 @@ what's missing, and specific file:line references.]
 
 ---
 
-## 31-Point Citation Readiness Checklist
+## Multi-Purpose Project Audit
 
-Run this per page. Each item is pass or fail.
+When auditing a full project with mixed page types:
 
-### A. Opening Structure (4 points)
-1. First 1-2 sentences directly answer the page's core question
-2. First 200 words function as independent citation
-3. Table of contents with descriptive anchor links present
-4. Key Takeaways / TL;DR section above the fold
+1. Detect purposes for all pages (Step 0)
+2. Group pages by purpose
+3. Score each group with its purpose-specific criteria
+4. Report per-group scores and an overall project average
+5. Anti-pattern scan runs across all pages regardless of purpose
 
-### B. Topical Completeness (6 points)
-5. H1 contains the exact target query/phrase
-6. All major subtopics covered (compare competitor H2s)
-7. Each section answers only one specific question
-8. All key terms include explicit definitions
-9. Specific numbers/statistics included (not vague language)
-10. At least 1 comparison table or framework present
+Report includes a summary table:
 
-### C. Entity Signals (4 points)
-11. Brand name used explicitly (no "we", "it", "this")
-12. Author byline with name, credentials, external links
-13. Organization and Person schemas implemented
-14. Brand/product names consistent across all pages
+```
+### Project Summary
 
-### D. Technical Accessibility (4 points)
-15. robots.txt allows AI search bots
-16. Cloudflare WAF not blocking AI search bots
-17. sitemap.xml up to date
-18. Satisfactory page load speed
-
-### E. Content Formatting (7 points)
-19. H2 headings in question form matching user prompts
-20. Paragraphs kept to 2-4 sentences
-21. Terminology used consistently
-22. Comparison info structured as tables
-23. FAQPage schema on FAQ sections
-24. Appropriate page-type schema applied
-25. Published and last modified dates displayed
-
-### F. Distribution (3 points)
-26. LinkedIn/community sharing plan within 48 hours
-27. At least 1 external backlink/mention planned
-28. Content repurposed into other formats
-
-### G. Post-Publish Monitoring (3 points)
-29. Brand citation testing schedule exists
-30. Quarterly content update schedule planned
-31. Key insights distilled into quotable summaries
+| Purpose | Pages | Avg Score | Key Issues |
+|---------|-------|-----------|------------|
+| Content | 7 | 72/100 | Missing author bylines, weak openings |
+| Standing | 4 | 58/100 | No comparison tables, "contact us" pricing |
+| Logic | 1 | 85/100 | Minor: static assets not blocked |
+| **Overall** | **12** | **68/100** | |
+```
 
 ---
 
 ## Reference Documents
 
-For detailed guidance during the audit, read these files from this skill's `references/` directory (two levels up: `../../references/`):
+For detailed guidance during the audit, read these files from `../../references/`:
 
 | When you need... | Read |
 |-----------------|------|
-| Understanding what earns AI citations | `../../references/geo-principles.md` |
-| Page structure templates to compare against | `../../references/page-templates.md` |
-| JSON-LD schema templates to verify implementation | `../../references/schema-markup.md` |
-| Correct robots.txt configuration | `../../references/ai-crawler-access.md` |
-| Per-platform optimization details | `../../references/platform-strategies.md` |
-| Full checklist with context | `../../references/citation-checklist.md` |
+| Page purpose detection signals | `page-purpose-detection.md` |
+| Universal minimum signals | `content-signal-stack.md` |
+| Understanding what earns AI citations | `geo-principles.md` |
+| Page structure templates to compare against | `page-templates.md` |
+| JSON-LD schema templates to verify implementation | `schema-markup.md` |
+| Correct robots.txt configuration | `ai-crawler-access.md` |
+| Per-platform optimization details | `platform-strategies.md` |
+| Purpose-aware checklist | `citation-checklist.md` |
+| Anti-pattern catalog and detection methods | `anti-patterns.md` |
+| Fix recipes for detected anti-patterns | `fix-recipes.md` |
+| Framework-specific GEO pitfalls | `framework-pitfalls.md` |
+| GEO spec format (if spec exists) | `geo-spec.md` |
+
+---
+
+## Post-Audit: GEO Spec Update
+
+If a `geo-spec/` directory exists, offer to update:
+- **`infra-status.md`** — with the latest audit date, score, and infrastructure status
+- **`page-map.md`** — with any newly detected page purpose mappings
 
 ---
 
 ## Implementation Principles
 
-1. **UX first** — Never recommend changes that sacrifice user experience
-2. **Impact-ordered** — Present findings from highest to lowest impact
-3. **Framework agnostic** — Detect the tech stack and give framework-appropriate advice
-4. **Actionable** — Every finding must have a concrete fix, not just "improve this"
-5. **Evidence-based** — Reference specific files and line numbers
-6. **SEO complementary** — GEO layers on top of SEO, not replaces it
+1. **Purpose first** — Detect purpose before scoring; never apply a flat checklist to all page types
+2. **UX first** — Never recommend changes that sacrifice user experience
+3. **Impact-ordered** — Present findings from highest to lowest impact
+4. **Framework agnostic** — Detect the tech stack and give framework-appropriate advice
+5. **Actionable** — Every finding must have a concrete fix, not just "improve this"
+6. **Evidence-based** — Reference specific files and line numbers
+7. **SEO complementary** — GEO layers on top of SEO, not replaces it
