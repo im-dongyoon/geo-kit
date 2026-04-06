@@ -11,7 +11,7 @@
       "name": "geo-kit",
       "source": "./",
       "description": "GEO optimization — build AI-citable web pages and audit existing pages for AI search engines",
-      "version": "2.0.0",
+      "version": "3.0.0",
       "category": "productivity",
       "keywords": ["geo", "seo", "ai-search", "schema-markup", "structured-data", "citability"],
       "author": {
